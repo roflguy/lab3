@@ -1,0 +1,82 @@
+<html>
+<head>
+  <style>
+  #map {
+    height: 100%;
+    width: 100%;
+  }
+  body {
+    padding: 0;
+    margin: 0;
+  }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+   <script>
+     const COORD = [
+       { lat: 49.233083, lng: 28.468217 }, //Vinnitsa
+       { lat: 50.450100, lng: 30.523400 }, //Kyiv
+       { lat: 49.839683, lng: 24.029717 }, //Lviv
+       { lat: 47.838800, lng: 35.139567 }, //Zaporizya
+       { lat: 46.482526, lng: 30.723310 }, //Odesa
+       { lat: 50.907700, lng: 34.798100 }  //Sumy
+     ];
+     var map, marker;
+     function initMap() {
+       map = new google.maps.Map(document.getElementById('map'), {
+         center: COORD[0],
+         zoom: 6
+       });
+     }
+     function createMarker(location, weather, icon) {
+       marker = new google.maps.Marker({
+          position: new google.maps.LatLng(location),
+          map: map,
+          label: {
+               text: weather.main,
+               color: 'blue'
+          },
+          icon: {
+            url: icon,
+            labelOrigin: new google.maps.Point(30, 40)
+          }
+        });
+     }
+     function createInfoWindow(contentString) {
+       let infoWindow = new google.maps.InfoWindow();
+       marker.addListener('click', (function(marker) {
+         return function() {
+           infoWindow.setContent(contentString);
+           infoWindow.open(map, marker);
+         }
+      })(marker));
+     }
+     function getWeather(location) {
+       const API_KEY = '8b55cc8d48eb884c83251946930bc0d5';
+       let url = `http://api.openweathermap.org/data/2.5/weather?lat=${location.lat}&lon=${location.lng}&appid=${API_KEY}`;
+       return fetch (url)
+        .then((response) => response.json());
+     }
+     for (let coord of COORD)
+     {
+       getWeather(coord)
+        .then((json) => {
+          const main = json.main;
+          const weather = json.weather[0];
+          const icon = `http://openweathermap.org/img/w/${weather.icon}.png`;
+          const contentString = `Температура повітря: ${Math.round(main.temp - 273.15)}°C<br>
+                                 Вологість: ${main.humidity}%<br>
+                                 Швидкiсть вітру: ${json.wind.speed}м/с<br>
+                                 Відсоток закритого неба: ${json.clouds.all}%`;
+           coord.content = contentString;
+           console.log(coord);
+           createMarker(coord, weather, icon);
+           createInfoWindow(coord.content);
+        });
+      }
+   </script>
+   <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDL2Y_0AD5a03m5YcVOCPZ6tb-P3qHyNDE&callback=initMap"
+   async defer></script>
+</body>
+</html>
